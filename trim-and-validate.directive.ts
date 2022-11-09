@@ -26,11 +26,12 @@ import {
 @Directive({
 	selector: "[trimAndValidate]",
 })
-export class TrimAndValidateDirective implements OnInit, OnDestroy {
+export class TrimAndValidateDirective implements OnInit, OnDestroy, AfterViewInit {
 	@Input() asyncValidatorFns!: AsyncValidatorFn[];
 	@Input() controlsKeyForValidation!: string;
 	@Input() inputForm!: FormGroup;
-	inputHasInitialValue!: boolean;
+	initialName!: string;
+	settingValueForFirstTime = true;
 	#currentKey$ = new BehaviorSubject<string>("");
 	#inputSelectionParameters$ = new BehaviorSubject<InputSelectionParameters>({
 		selectionStart: 0,
@@ -50,11 +51,8 @@ export class TrimAndValidateDirective implements OnInit, OnDestroy {
 	}
 
 	ngOnInit(): void {
-		this.inputForm.controls[this.controlsKeyForValidation].valueChanges
-			.pipe(take(1))
-			.subscribe((value) => {
-				this.inputHasInitialValue = value !== "";
-			});
+		    addAsyncValidators(this.inputForm, this.controlsKeyForValidation, this.asyncValidatorFns);
+
 
 		this.#subscription.add(
 			this.inputForm.controls[this.controlsKeyForValidation].valueChanges
@@ -85,18 +83,10 @@ export class TrimAndValidateDirective implements OnInit, OnDestroy {
 					}))
 				)
 				.subscribe(({ previous, current }) => {
-					setInputValue(
-						this.inputHasInitialValue,
-						current.name,
-						this.inputForm,
-						this.controlsKeyForValidation
-					);
-					this.inputForm.controls[
-						this.controlsKeyForValidation
-					].addAsyncValidators(this.asyncValidatorFns);
-					this.inputForm.controls[
-						this.controlsKeyForValidation
-					].updateValueAndValidity({ onlySelf: true });
+					 setInputValue(this.initialName, current.name, this.settingValueForFirstTime, this.inputForm, this.controlsKeyForValidation);
+          addAsyncValidators(this.inputForm, this.controlsKeyForValidation, this.asyncValidatorFns);
+				          this.settingValueForFirstTime = false;
+
 					if (current.keyIsSpace || current.keyIsBackspace) {
 						handleCaretPosition(this.elementRef, previous, current);
 					} else {
@@ -107,6 +97,12 @@ export class TrimAndValidateDirective implements OnInit, OnDestroy {
 				})
 		);
 	}
+	
+	ngAfterViewInit(): void {
+    this.inputForm.controls[this.controlsKeyForValidation].valueChanges.pipe(take(1)).subscribe((value) => {
+      this.initialName = value;
+    });
+  }
 
 	ngOnDestroy(): void {
 		this.#subscription.unsubscribe();
