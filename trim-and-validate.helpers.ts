@@ -1,6 +1,6 @@
 import { ElementRef } from "@angular/core";
 import { BehaviorSubject } from "rxjs";
-import { FormGroup } from "@angular/forms";
+import { AsyncValidatorFn, FormGroup } from "@angular/forms";
 import { InputSelectionParameters } from "./trim-and-validate.model";
 
 export const setSelectionParameters = (
@@ -72,19 +72,16 @@ export const handleCaretPosition = (
 	}
 };
 
-export const setInputValue = (
-	inputHasInitialValue: boolean,
-	newValue: string,
-	form: FormGroup,
-	controlsKey: string
-): void => {
-	form.controls[controlsKey].patchValue(
-		trimStringStartAndRemoveMultipleSpaces(newValue),
-		{ emitEvent: false }
-	);
-	if (inputHasInitialValue) {
-		form.controls[controlsKey].markAsDirty();
-	} else {
-		form.controls[controlsKey].markAsPristine();
-	}
+export const setInputValue = (initialName: string, currentName: string, settingValueForFirstTime: boolean, form: FormGroup, controlsKey: string): void => {
+  form.controls[controlsKey].patchValue(trimStringStartAndRemoveMultipleSpaces(currentName), { emitEvent: false });
+  if (initialName !== '' && initialName === currentName && settingValueForFirstTime) {
+    form.controls[controlsKey].markAsPristine();
+  } else {
+    form.controls[controlsKey].markAsDirty();
+  }
+};
+
+export const addAsyncValidators = (form: FormGroup, controlsKey: string, validators: AsyncValidatorFn[]): void => {
+  form.controls[controlsKey].addAsyncValidators(validators);
+  form.controls[controlsKey].updateValueAndValidity({ onlySelf: true });
 };
