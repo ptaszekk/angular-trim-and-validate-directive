@@ -60,13 +60,13 @@ export class TrimAndValidateDirective implements OnInit, OnDestroy, AfterViewIni
 					startWith(
 						this.inputForm.controls[this.controlsKeyForValidation].value
 					),
-					distinctUntilChanged(),
 					tap(() => {
 						clearTimeout(this.#timeout);
 						this.inputForm.controls[
 							this.controlsKeyForValidation
 						].clearAsyncValidators();
 					}),
+				        distinctUntilChanged(),
 					pairwise(),
 					withLatestFrom(this.#inputSelectionParameters$, this.#currentKey$),
 					map(([name, selectionParameters, currentKey]) => ({
